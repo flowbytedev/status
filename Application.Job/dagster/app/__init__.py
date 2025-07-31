@@ -1,48 +1,34 @@
 
-from dagster import Definitions, define_asset_job, load_assets_from_modules
-# from app.assets import recurrence
+from app.assets import ping
 
-from app.assets import (
-    extract_recurring_transactions,
-    create_entries,
-    update_recurring_transactions
-)
+from dagster import Definitions, ScheduleDefinition, define_asset_job, load_assets_from_modules
 
-from app.schedules import (
-    daily_recurring_transaction_schedule,
-    recurring_transaction_schedule_6h,
-    custom_recurring_transaction_schedule
-)
+from app.assets.ping import get_server_details
 
-from app.sensors import (
-    recurring_transaction_sensor,
-    recurring_transaction_batch_sensor
-)
+
+# Define a job for ping monitoring
+ping_servers_job = define_asset_job(name="ping_servers", selection=[get_server_details])
 
 
 
-# recurrence_assets = load_assets_from_modules([recurrence])
-
-# Define a job that includes all the recurring transaction assets
-recurring_transaction_job = define_asset_job(
-    name="recurring_transaction_job",
-    selection=[
-        extract_recurring_transactions,
-        create_entries,
-        update_recurring_transactions
-    ],
-    description="Process recurring transactions and create expense/income entries"
+ping_servers_schedule = ScheduleDefinition(
+    name="ping_servers_job_schedule",
+    job_name="ping_servers",
+    cron_schedule="*/5 * * * *",
+    execution_timezone="Asia/Beirut",
+    description="Monitors server connectivity by pinging servers from STATUSAPP database every 5 minutes, posts status updates to API, and creates incidents for offline servers"
 )
 
 
 defs = Definitions(
     assets=[
-
+        get_server_details
     ],
     jobs=[
-
+        ping_servers_job
     ],
     schedules=[
+        ping_servers_schedule
 
     ],
     sensors=[
